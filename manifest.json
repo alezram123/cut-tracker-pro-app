@@ -1,9 +1,15 @@
 {
   "name": "Cut Tracker Pro",
   "short_name": "Cut Tracker",
+  "description": "A clean local-first 12-week cut tracker.",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
-  "background_color": "#050b16",
+  "orientation": "portrait",
+  "background_color": "#02060f",
   "theme_color": "#09111f",
-  "icons": []
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
 }

@@ -24,6 +24,7 @@
 </head>
 <body>
   <div class="bg-glow"></div>
+
   <div class="install-banner hidden" id="installBanner">
     <div>
       <strong>Add to Home Screen</strong>
@@ -32,8 +33,8 @@
     <button type="button" class="banner-close" id="closeInstallBanner" aria-label="Dismiss">✕</button>
   </div>
 
-  <main class="app-shell">
-    <header class="hero card">
+  <main class="app-shell app-shell-tabs">
+    <header class="hero hero-compact">
       <div class="brand-row">
         <div class="brand-icon">🔥</div>
         <div>
@@ -44,78 +45,125 @@
       <div class="date-pill" id="todayPill"></div>
     </header>
 
-    <section class="stats-grid">
-      <article class="card stat-card">
-        <span class="label">Current Streak</span>
-        <strong id="currentStreak">0</strong>
+    <section class="tab-screen active" data-tab="dashboard">
+      <section class="stats-grid stats-grid-compact">
+        <article class="card stat-card">
+          <span class="label">Current Streak</span>
+          <strong id="currentStreak">0</strong>
+        </article>
+        <article class="card stat-card">
+          <span class="label">Best Streak</span>
+          <strong id="bestStreak">0</strong>
+        </article>
+        <article class="card stat-card">
+          <span class="label">Today Score</span>
+          <strong><span id="todayScore">0</span>/4</strong>
+        </article>
+      </section>
+
+      <section class="dashboard-grid">
+        <article class="card checkin-card">
+          <div class="section-head">
+            <h2>Daily Check-In</h2>
+            <p>Fast inputs. One place. No guessing.</p>
+          </div>
+          <form id="checkinForm" class="form-grid">
+            <label>
+              <span>Weight</span>
+              <input type="number" step="0.1" inputmode="decimal" name="weight" placeholder="200.0" />
+            </label>
+            <label>
+              <span>Steps</span>
+              <input type="number" step="1" inputmode="numeric" name="steps" placeholder="10000" />
+            </label>
+            <label>
+              <span>Sleep (hours)</span>
+              <input type="number" step="0.1" inputmode="decimal" name="sleep" placeholder="7.5" />
+            </label>
+            <label>
+              <span>Energy (1–10)</span>
+              <input type="number" min="1" max="10" step="1" inputmode="numeric" name="energy" placeholder="7" />
+            </label>
+            <label>
+              <span>Waist (weekly)</span>
+              <input type="number" step="0.1" inputmode="decimal" name="waist" placeholder="36.0" />
+            </label>
+            <label>
+              <span>Body fat % (weekly est.)</span>
+              <input type="number" step="0.1" inputmode="decimal" name="bodyFat" placeholder="20.0" />
+            </label>
+            <label class="full-span">
+              <span>Notes</span>
+              <textarea name="notes" rows="4" placeholder="Energy, hunger, workout notes, anything you want to remember."></textarea>
+            </label>
+            <button type="submit" class="btn btn-primary full-span tap-target">Save Day</button>
+            <button type="button" id="resetHabitsBtn" class="btn btn-secondary full-span tap-target">Reset Habits</button>
+          </form>
+        </article>
+
+        <article class="card habits-card">
+          <div class="section-head">
+            <h2>Tap-to-Check Habits</h2>
+            <p>Hit at least 3 out of 4 for a successful day.</p>
+          </div>
+          <div class="habit-list" id="habitList"></div>
+          <div class="ring-wrap">
+            <div class="progress-ring">
+              <svg viewBox="0 0 120 120">
+                <circle class="ring-bg" cx="60" cy="60" r="46"></circle>
+                <circle class="ring-progress" id="ringProgress" cx="60" cy="60" r="46"></circle>
+              </svg>
+              <div class="ring-center">
+                <strong id="ringScore">0/4</strong>
+                <span>today</span>
+              </div>
+            </div>
+          </div>
+        </article>
+      </section>
+    </section>
+
+    <section class="tab-screen" data-tab="history">
+      <article class="card calendar-card">
+        <div class="section-head">
+          <h2>Streak Calendar</h2>
+          <p>See your recent streak days at a glance.</p>
+        </div>
+        <div id="calendar"></div>
       </article>
-      <article class="card stat-card">
-        <span class="label">Best Streak</span>
-        <strong id="bestStreak">0</strong>
-      </article>
-      <article class="card stat-card">
-        <span class="label">Today Score</span>
-        <strong><span id="todayScore">0</span>/4</strong>
+
+      <article class="card recent-card">
+        <div class="section-head">
+          <h2>Recent Check-Ins</h2>
+          <p>Your last saved days.</p>
+        </div>
+        <div id="recentList" class="recent-list"></div>
       </article>
     </section>
 
-    <section class="main-grid">
-      <article class="card checkin-card">
+    <section class="tab-screen" data-tab="trends">
+      <article class="card countdown-card">
         <div class="section-head">
-          <h2>Daily Check-In</h2>
-          <p>Fast inputs. One place. No guessing.</p>
+          <h2>Goal Countdown</h2>
+          <p>Track your 12-week finish line.</p>
         </div>
-        <form id="checkinForm" class="form-grid">
-          <label>
-            <span>Weight</span>
-            <input type="number" step="0.1" inputmode="decimal" name="weight" placeholder="200.0" />
-          </label>
-          <label>
-            <span>Steps</span>
-            <input type="number" step="1" inputmode="numeric" name="steps" placeholder="10000" />
-          </label>
-          <label>
-            <span>Sleep (hours)</span>
-            <input type="number" step="0.1" inputmode="decimal" name="sleep" placeholder="7.5" />
-          </label>
-          <label>
-            <span>Energy (1–10)</span>
-            <input type="number" min="1" max="10" step="1" inputmode="numeric" name="energy" placeholder="7" />
-          </label>
-          <label>
-            <span>Waist (weekly)</span>
-            <input type="number" step="0.1" inputmode="decimal" name="waist" placeholder="36.0" />
-          </label>
-          <label>
-            <span>Body fat % (weekly est.)</span>
-            <input type="number" step="0.1" inputmode="decimal" name="bodyFat" placeholder="20.0" />
-          </label>
-          <label class="full-span">
-            <span>Notes</span>
-            <textarea name="notes" rows="4" placeholder="Energy, hunger, workout notes, anything you want to remember."></textarea>
-          </label>
-          <button type="submit" class="btn btn-primary full-span tap-target">Save Day</button>
-          <button type="button" id="resetHabitsBtn" class="btn btn-secondary full-span tap-target">Reset Habits</button>
-        </form>
-      </article>
-
-      <article class="card habits-card">
-        <div class="section-head">
-          <h2>Tap-to-Check Habits</h2>
-          <p>Hit at least 3 out of 4 for a successful day.</p>
-        </div>
-        <div class="habit-list" id="habitList"></div>
-        <div class="ring-wrap">
-          <div class="progress-ring">
-            <svg viewBox="0 0 120 120">
-              <circle class="ring-bg" cx="60" cy="60" r="46"></circle>
-              <circle class="ring-progress" id="ringProgress" cx="60" cy="60" r="46"></circle>
-            </svg>
-            <div class="ring-center">
-              <strong id="ringScore">0/4</strong>
-              <span>today</span>
-            </div>
+        <div class="goal-grid">
+          <div class="mini-card">
+            <span>Start Date</span>
+            <strong id="startDateCard">—</strong>
           </div>
+          <div class="mini-card">
+            <span>Goal Date</span>
+            <strong id="goalDateCard">—</strong>
+          </div>
+        </div>
+        <div class="goal-progress-card">
+          <div class="goal-progress-head">
+            <strong>Progress to Goal</strong>
+            <strong id="goalPercent">0%</strong>
+          </div>
+          <div class="goal-bar"><div id="goalBar" class="goal-bar-fill"></div></div>
+          <p id="goalMessage">You are 0% of the way through your 12-week cut.</p>
         </div>
       </article>
 
@@ -147,53 +195,45 @@
             <strong id="latestBodyFat">—</strong>
           </div>
         </div>
-        <button id="exportBtn" class="btn btn-secondary tap-target">Export Data</button>
-        <button id="clearBtn" class="btn btn-danger tap-target">Clear All Data</button>
-      </article>
-
-      <article class="card calendar-card">
-        <div class="section-head">
-          <h2>Streak Calendar</h2>
-          <p>See your recent streak days at a glance.</p>
-        </div>
-        <div id="calendar"></div>
-      </article>
-
-      <article class="card countdown-card">
-        <div class="section-head">
-          <h2>Goal Countdown</h2>
-          <p>Track your 12-week finish line.</p>
-        </div>
-        <div class="goal-grid">
-          <div class="mini-card">
-            <span>Start Date</span>
-            <strong id="startDateCard">—</strong>
-          </div>
-          <div class="mini-card">
-            <span>Goal Date</span>
-            <strong id="goalDateCard">—</strong>
-          </div>
-        </div>
-        <div class="goal-progress-card">
-          <div class="goal-progress-head">
-            <strong>Progress to Goal</strong>
-            <strong id="goalPercent">0%</strong>
-          </div>
-          <div class="goal-bar"><div id="goalBar" class="goal-bar-fill"></div></div>
-          <p id="goalMessage">You are 0% of the way through your 12-week cut.</p>
-        </div>
-      </article>
-
-      <article class="card recent-card full-width">
-        <div class="section-head">
-          <h2>Recent Check-Ins</h2>
-          <p>Your last saved days.</p>
-        </div>
-        <div id="recentList" class="recent-list"></div>
       </article>
     </section>
 
-    <footer class="footer-note">
+    <section class="tab-screen" data-tab="settings">
+      <article class="card settings-card">
+        <div class="section-head">
+          <h2>Settings</h2>
+          <p>Manage your app and your data.</p>
+        </div>
+        <div class="settings-stack">
+          <button id="exportBtn" class="btn btn-secondary tap-target">Export Data</button>
+          <button id="clearBtn" class="btn btn-danger tap-target">Clear All Data</button>
+        </div>
+        <div class="settings-note">
+          Everything saves locally on your device. Add it to your Home Screen for the full app feel.
+        </div>
+      </article>
+    </section>
+
+    <nav class="bottom-nav card">
+      <button class="tab-btn active" data-target="dashboard" type="button">
+        <span class="tab-icon">▦</span>
+        <span class="tab-label">Dashboard</span>
+      </button>
+      <button class="tab-btn" data-target="history" type="button">
+        <span class="tab-icon">◫</span>
+        <span class="tab-label">History</span>
+      </button>
+      <button class="tab-btn" data-target="trends" type="button">
+        <span class="tab-icon">⌁</span>
+        <span class="tab-label">Trends</span>
+      </button>
+      <button class="tab-btn" data-target="settings" type="button">
+        <span class="tab-icon">⚙</span>
+        <span class="tab-label">Settings</span>
+      </button>
+    </nav>
+
+    <footer class="footer-note footer-note-tabs">
       Everything saves locally on your device. Add it to your Home Screen for the full app feel.
     </footer>
   </main>

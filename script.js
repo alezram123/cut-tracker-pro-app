@@ -1,5 +1,6 @@
 const STORAGE_KEY = 'cut-tracker-pro-v1';
 const INSTALL_BANNER_KEY = 'cut-tracker-pro-install-banner-dismissed';
+const TAB_KEY = 'cut-tracker-pro-active-tab';
 const HABITS = [
   { id: 'protein', title: 'Hit protein', sub: 'Stay on your target.' },
   { id: 'calories', title: 'Stayed on calories', sub: 'Keep the cut moving.' },
@@ -47,6 +48,8 @@ const els = {
   toast: document.getElementById('toast'),
   installBanner: document.getElementById('installBanner'),
   closeInstallBanner: document.getElementById('closeInstallBanner'),
+  tabBtns: Array.from(document.querySelectorAll('.tab-btn')),
+  tabScreens: Array.from(document.querySelectorAll('.tab-screen')),
 };
 
 init();
@@ -56,19 +59,8 @@ function init() {
   seedDemoIfEmpty();
   attachEvents();
   setupInstallPrompt();
+  switchTab(localStorage.getItem(TAB_KEY) || 'dashboard', false);
   renderAll();
-}
-
-function seedDemoIfEmpty() {
-  if (Object.keys(state.checkins).length) return;
-  const sampleA = addDays(isoToday(), -3);
-  const sampleB = isoToday();
-  state.startDate = addDays(isoToday(), -3);
-  state.goalDate = addDays(state.startDate, 84);
-  state.checkins[sampleA] = { date: sampleA, weight: '', steps: '', sleep: '', energy: '', waist: '', bodyFat: '', notes: '', score: 4, habits: { protein: true, calories: true, workout: true, weight: true }, success: true };
-  state.checkins[sampleB] = { date: sampleB, weight: '', steps: '', sleep: '', energy: '', waist: '', bodyFat: '', notes: '', score: 4, habits: { protein: true, calories: true, workout: true, weight: true }, success: true };
-  state.habitsToday = { protein: true, calories: true, workout: true, weight: true };
-  saveState();
 }
 
 function attachEvents() {
@@ -92,6 +84,16 @@ function attachEvents() {
   els.closeInstallBanner?.addEventListener('click', dismissInstallBanner);
   document.addEventListener('focusin', handleFocusScroll);
   window.addEventListener('resize', drawWeightChart);
+  els.tabBtns.forEach(btn => btn.addEventListener('click', () => switchTab(btn.dataset.target)));
+}
+
+function switchTab(tab, tactile = true) {
+  if (tactile) haptic('light');
+  els.tabBtns.forEach(btn => btn.classList.toggle('active', btn.dataset.target === tab));
+  els.tabScreens.forEach(screen => screen.classList.toggle('active', screen.dataset.tab === tab));
+  localStorage.setItem(TAB_KEY, tab);
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  if (tab === 'trends') setTimeout(drawWeightChart, 80);
 }
 
 function setupInstallPrompt() {
@@ -120,6 +122,18 @@ function showInstallBanner() {
 function dismissInstallBanner() {
   localStorage.setItem(INSTALL_BANNER_KEY, '1');
   els.installBanner?.classList.add('hidden');
+}
+
+function seedDemoIfEmpty() {
+  if (Object.keys(state.checkins).length) return;
+  const sampleA = addDays(isoToday(), -3);
+  const sampleB = isoToday();
+  state.startDate = addDays(isoToday(), -3);
+  state.goalDate = addDays(state.startDate, 84);
+  state.checkins[sampleA] = { date: sampleA, weight: '199.4', steps: '9800', sleep: '', energy: '', waist: '', bodyFat: '', notes: '', score: 4, habits: { protein: true, calories: true, workout: true, weight: true }, success: true };
+  state.checkins[sampleB] = { date: sampleB, weight: '200.0', steps: '10000', sleep: '', energy: '', waist: '', bodyFat: '', notes: '', score: 4, habits: { protein: true, calories: true, workout: true, weight: true }, success: true };
+  state.habitsToday = { protein: true, calories: true, workout: true, weight: true };
+  saveState();
 }
 
 function renderAll() {
@@ -304,7 +318,7 @@ function renderCalendar() {
 }
 
 function renderRecentList() {
-  const items = getSortedCheckins().slice(-5).reverse();
+  const items = getSortedCheckins().slice(-20).reverse();
   els.recentList.innerHTML = items.length ? '' : '<div class="empty">No saved days yet.</div>';
   items.forEach(entry => {
     const card = document.createElement('div');

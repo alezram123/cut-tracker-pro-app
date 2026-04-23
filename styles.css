@@ -638,3 +638,122 @@ input::placeholder, textarea::placeholder { color: rgba(186, 201, 228, 0.42); }
   .recent-item { align-items: flex-start; flex-direction: column; }
   .progress-ring { width: 150px; height: 150px; }
 }
+
+
+/* === tabbed native layout === */
+.app-shell-tabs {
+  max-width: 430px;
+  padding: 16px 14px calc(104px + env(safe-area-inset-bottom));
+}
+.hero-compact {
+  padding-top: 6px;
+  margin-bottom: 10px;
+}
+.hero-compact .brand-icon {
+  width: 58px;
+  height: 58px;
+  font-size: 27px;
+  border-radius: 18px;
+}
+.hero-compact h1 {
+  font-size: 1.95rem;
+}
+.hero-compact p {
+  font-size: 0.94rem;
+}
+.stats-grid-compact {
+  gap: 10px;
+  margin-bottom: 14px;
+}
+.stats-grid-compact .stat-card {
+  min-height: 86px;
+  padding: 14px 14px 12px;
+}
+.stats-grid-compact .stat-card .label {
+  font-size: 0.83rem;
+}
+.stats-grid-compact .stat-card strong {
+  margin-top: 8px;
+  font-size: 2.15rem;
+}
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 14px;
+}
+.tab-screen {
+  display: none;
+  animation: fadeTab .18s ease;
+}
+.tab-screen.active {
+  display: block;
+}
+@keyframes fadeTab {
+  from { opacity: .65; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.tab-screen .card {
+  margin-bottom: 14px;
+}
+.settings-stack {
+  display: grid;
+  gap: 12px;
+}
+.settings-note {
+  margin-top: 18px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+.bottom-nav {
+  position: fixed;
+  left: 50%;
+  bottom: calc(10px + env(safe-area-inset-bottom));
+  transform: translateX(-50%);
+  width: min(402px, calc(100vw - 20px));
+  z-index: 45;
+  padding: 8px;
+  border-radius: 28px;
+  background: rgba(7, 18, 31, 0.9);
+  backdrop-filter: blur(20px);
+  box-shadow: 0 22px 54px rgba(0,0,0,0.45);
+}
+.bottom-nav .tab-btn {
+  border: 0;
+  background: transparent;
+  color: rgba(238, 244, 255, 0.56);
+  border-radius: 20px;
+  min-height: 58px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+  align-items: center;
+  flex: 1;
+}
+.bottom-nav {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px;
+}
+.bottom-nav .tab-btn.active {
+  color: #53a7ff;
+  background: rgba(255,255,255,0.04);
+}
+.tab-icon {
+  font-size: 1.05rem;
+  line-height: 1;
+}
+.tab-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+.footer-note-tabs {
+  display: none;
+}
+@media (min-width: 861px) {
+  body {
+    background:
+      radial-gradient(circle at top, rgba(24,64,130,0.2), transparent 30%),
+      linear-gradient(180deg, #02060f 0%, #050b16 50%, #02060f 100%);
+  }
+}

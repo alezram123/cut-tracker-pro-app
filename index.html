@@ -225,6 +225,56 @@
         <div class="photo-grid" id="photoGrid"></div>
       </article>
 
+      <article class="card compare-card">
+        <div class="section-head">
+          <h2>Before / After</h2>
+          <p>Pick two progress photos and slide to compare.</p>
+        </div>
+        <div class="compare-controls">
+          <label>
+            <span>Before Photo</span>
+            <select id="beforePhotoSelect"></select>
+          </label>
+          <label>
+            <span>After Photo</span>
+            <select id="afterPhotoSelect"></select>
+          </label>
+        </div>
+        <div class="compare-stage empty-compare" id="compareStage">
+          <div class="compare-placeholder">Save at least 2 photos to compare.</div>
+          <img id="beforeCompareImage" class="compare-img compare-before" alt="Before progress photo" />
+          <div id="afterCompareWrap" class="compare-after-wrap">
+            <img id="afterCompareImage" class="compare-img compare-after" alt="After progress photo" />
+          </div>
+          <div id="compareHandle" class="compare-handle">
+            <span></span>
+          </div>
+          <input id="compareSlider" class="compare-slider" type="range" min="0" max="100" value="50" />
+        </div>
+      </article>
+
+      <article class="card weekly-summary-card">
+        <div class="section-head">
+          <h2>Weekly Auto-Summary</h2>
+          <p>Your week at a glance.</p>
+        </div>
+        <div class="summary-grid">
+          <div class="summary-tile">
+            <span>Weight Change</span>
+            <strong id="summaryWeight">—</strong>
+          </div>
+          <div class="summary-tile">
+            <span>Streak %</span>
+            <strong id="summaryStreak">—</strong>
+          </div>
+          <div class="summary-tile">
+            <span>Habits Hit Rate</span>
+            <strong id="summaryHabits">—</strong>
+          </div>
+        </div>
+        <p class="summary-note" id="summaryNote">Save a few days this week to generate your summary.</p>
+      </article>
+
       <article class="card weekly-card">
         <div class="section-head">
           <h2>Weekly Review</h2>

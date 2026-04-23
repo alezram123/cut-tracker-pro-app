@@ -78,6 +78,18 @@ const els = {
   deleteViewerPhoto: document.getElementById('deleteViewerPhoto'),
   viewerPrev: document.getElementById('viewerPrev'),
   viewerNext: document.getElementById('viewerNext'),
+  beforePhotoSelect: document.getElementById('beforePhotoSelect'),
+  afterPhotoSelect: document.getElementById('afterPhotoSelect'),
+  compareStage: document.getElementById('compareStage'),
+  beforeCompareImage: document.getElementById('beforeCompareImage'),
+  afterCompareImage: document.getElementById('afterCompareImage'),
+  afterCompareWrap: document.getElementById('afterCompareWrap'),
+  compareHandle: document.getElementById('compareHandle'),
+  compareSlider: document.getElementById('compareSlider'),
+  summaryWeight: document.getElementById('summaryWeight'),
+  summaryStreak: document.getElementById('summaryStreak'),
+  summaryHabits: document.getElementById('summaryHabits'),
+  summaryNote: document.getElementById('summaryNote'),
 };
 
 init();
@@ -128,6 +140,9 @@ function attachEvents() {
   els.photoViewer?.addEventListener('touchstart', handleViewerTouchStart, { passive: false });
   els.photoViewer?.addEventListener('touchmove', handleViewerTouchMove, { passive: false });
   els.photoViewer?.addEventListener('touchend', handleViewerTouchEnd);
+  els.beforePhotoSelect?.addEventListener('change', renderBeforeAfterCompare);
+  els.afterPhotoSelect?.addEventListener('change', renderBeforeAfterCompare);
+  els.compareSlider?.addEventListener('input', updateCompareSlider);
   document.addEventListener('keydown', handleViewerKeydown);
 }
 
@@ -197,6 +212,8 @@ function renderAll() {
   renderMeasurements();
   renderPhotos();
   renderWeeklyReviews();
+  renderBeforeAfterOptions();
+  renderWeeklyAutoSummary();
   drawWeightChart();
 }
 
@@ -505,6 +522,7 @@ function renderPhotos() {
     card.addEventListener('click', () => openPhotoViewer(index));
     els.photoGrid.appendChild(card);
   });
+  renderBeforeAfterOptions();
 }
 
 function openPhotoViewer(index) {
@@ -529,7 +547,10 @@ function closePhotoViewer() {
 function updatePhotoViewer() {
   const photo = state.photos?.[activePhotoIndex];
   if (!photo || !els.viewerImage) return;
+  els.viewerImage.classList.remove('viewer-fade-in');
+  void els.viewerImage.offsetWidth;
   els.viewerImage.src = photo.dataUrl;
+  els.viewerImage.classList.add('viewer-fade-in');
   els.viewerImage.alt = `${photo.type} progress photo from ${photo.date}`;
   els.photoViewerTitle.textContent = `${photo.type} Photo`;
   els.photoViewerMeta.textContent = `${formatDateLong(photo.date)} • ${activePhotoIndex + 1} of ${state.photos.length}`;
@@ -542,7 +563,7 @@ function movePhotoViewer(direction) {
   activePhotoIndex = (activePhotoIndex + direction + state.photos.length) % state.photos.length;
   resetViewerZoom();
   updatePhotoViewer();
-  haptic('light');
+  haptic('medium');
 }
 
 
@@ -733,6 +754,103 @@ function getWeekKey() {
 
 function escapeHtml(str) {
   return String(str).replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[ch]));
+}
+
+
+
+function renderBeforeAfterOptions() {
+  if (!els.beforePhotoSelect || !els.afterPhotoSelect) return;
+  state.photos = state.photos || [];
+  const currentBefore = els.beforePhotoSelect.value;
+  const currentAfter = els.afterPhotoSelect.value;
+
+  const options = state.photos.map((photo, index) => {
+    const label = `${photo.type} • ${formatDateLong(photo.date)}`;
+    return `<option value="${photo.id}">${label}</option>`;
+  }).join('');
+
+  els.beforePhotoSelect.innerHTML = options || '<option value="">No photos yet</option>';
+  els.afterPhotoSelect.innerHTML = options || '<option value="">No photos yet</option>';
+
+  if (state.photos.length >= 2) {
+    els.beforePhotoSelect.value = currentBefore && state.photos.some(p => String(p.id) === currentBefore)
+      ? currentBefore
+      : String(state.photos[state.photos.length - 1].id);
+    els.afterPhotoSelect.value = currentAfter && state.photos.some(p => String(p.id) === currentAfter)
+      ? currentAfter
+      : String(state.photos[0].id);
+  }
+
+  renderBeforeAfterCompare();
+}
+
+function renderBeforeAfterCompare() {
+  if (!els.compareStage) return;
+  state.photos = state.photos || [];
+  const before = state.photos.find(p => String(p.id) === String(els.beforePhotoSelect?.value));
+  const after = state.photos.find(p => String(p.id) === String(els.afterPhotoSelect?.value));
+
+  if (!before || !after || state.photos.length < 2) {
+    els.compareStage.classList.add('empty-compare');
+    return;
+  }
+
+  els.compareStage.classList.remove('empty-compare');
+  els.beforeCompareImage.src = before.dataUrl;
+  els.afterCompareImage.src = after.dataUrl;
+  updateCompareSlider();
+}
+
+function updateCompareSlider() {
+  if (!els.compareSlider || !els.afterCompareWrap || !els.compareHandle) return;
+  const value = Number(els.compareSlider.value || 50);
+  els.afterCompareWrap.style.clipPath = `inset(0 0 0 ${value}%)`;
+  els.compareHandle.style.left = `${value}%`;
+}
+
+function renderWeeklyAutoSummary() {
+  if (!els.summaryWeight) return;
+
+  const today = isoToday();
+  const start = getWeekKey();
+  const end = addDays(start, 6);
+  const weekEntries = getSortedCheckins().filter(entry => entry.date >= start && entry.date <= end);
+
+  const weights = weekEntries
+    .filter(entry => entry.weight !== '' && !isNaN(Number(entry.weight)))
+    .map(entry => ({ date: entry.date, weight: Number(entry.weight) }));
+
+  let weightText = '—';
+  if (weights.length >= 2) {
+    const change = weights[weights.length - 1].weight - weights[0].weight;
+    weightText = `${change > 0 ? '+' : ''}${change.toFixed(1)} lb`;
+  } else if (weights.length === 1) {
+    weightText = '1 weigh-in';
+  }
+
+  const daysSoFar = Math.max(1, Math.min(7, daysBetween(start, today) + 1));
+  const successCount = weekEntries.filter(entry => entry.success).length;
+  const streakPct = Math.round((successCount / daysSoFar) * 100);
+
+  const possibleHabits = daysSoFar * HABITS.length;
+  const hitHabits = weekEntries.reduce((total, entry) => {
+    const habits = entry.habits || {};
+    return total + Object.values(habits).filter(Boolean).length;
+  }, 0);
+  const habitPct = possibleHabits ? Math.round((hitHabits / possibleHabits) * 100) : 0;
+
+  els.summaryWeight.textContent = weightText;
+  els.summaryStreak.textContent = `${streakPct}%`;
+  els.summaryHabits.textContent = `${habitPct}%`;
+
+  let note = `This week: ${successCount}/${daysSoFar} successful days and ${hitHabits}/${possibleHabits} habits hit.`;
+  if (weights.length >= 2) {
+    const change = weights[weights.length - 1].weight - weights[0].weight;
+    if (change < 0) note += ' Weight is trending down this week.';
+    if (change > 0) note += ' Weight is up this week — check calories, sodium, and consistency.';
+    if (change === 0) note += ' Weight is steady this week.';
+  }
+  els.summaryNote.textContent = note;
 }
 
 

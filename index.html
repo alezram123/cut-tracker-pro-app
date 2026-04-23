@@ -240,6 +240,11 @@
             <select id="afterPhotoSelect"></select>
           </label>
         </div>
+        <div class="compare-toolbar">
+          <button type="button" class="compare-mode-btn active" data-mode="slider">Slider</button>
+          <button type="button" class="compare-mode-btn" data-mode="side">Side-by-Side</button>
+          <button type="button" class="compare-mode-btn" id="autoSelectCompareBtn">Auto-Select Best</button>
+        </div>
         <div class="compare-stage empty-compare" id="compareStage">
           <div class="compare-placeholder">Save at least 2 photos to compare.</div>
           <img id="beforeCompareImage" class="compare-img compare-before" alt="Before progress photo" />
@@ -250,6 +255,16 @@
             <span></span>
           </div>
           <input id="compareSlider" class="compare-slider" type="range" min="0" max="100" value="50" />
+        </div>
+        <div class="compare-side-by-side hidden" id="compareSideBySide">
+          <div class="side-photo">
+            <img id="beforeSideImage" alt="Before photo side by side" />
+            <span>Before</span>
+          </div>
+          <div class="side-photo">
+            <img id="afterSideImage" alt="After photo side by side" />
+            <span>After</span>
+          </div>
         </div>
         <button id="shareCompareBtn" type="button" class="btn btn-primary tap-target full-width-btn">Create Share Image</button>
       </article>

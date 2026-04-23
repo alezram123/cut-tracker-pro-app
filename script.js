@@ -36,6 +36,7 @@ let pinchStartDistance = 0;
 let pinchStartScale = 1;
 let generatedShareBlob = null;
 let generatedShareUrl = '';
+let compareMode = 'slider';
 
 const els = {
   todayPill: document.getElementById('todayPill'),
@@ -100,6 +101,11 @@ const els = {
   sharePreview: document.getElementById('sharePreview'),
   downloadShareBtn: document.getElementById('downloadShareBtn'),
   nativeShareBtn: document.getElementById('nativeShareBtn'),
+  autoSelectCompareBtn: document.getElementById('autoSelectCompareBtn'),
+  compareModeBtns: Array.from(document.querySelectorAll('.compare-mode-btn[data-mode]')),
+  compareSideBySide: document.getElementById('compareSideBySide'),
+  beforeSideImage: document.getElementById('beforeSideImage'),
+  afterSideImage: document.getElementById('afterSideImage'),
 };
 
 init();
@@ -160,6 +166,11 @@ function attachEvents() {
   els.closeShareSheet?.addEventListener('click', closeShareSheet);
   els.downloadShareBtn?.addEventListener('click', downloadShareImage);
   els.nativeShareBtn?.addEventListener('click', nativeShareImage);
+  els.autoSelectCompareBtn?.addEventListener('click', () => {
+    autoSelectComparePhotos(true);
+    renderBeforeAfterCompare();
+  });
+  els.compareModeBtns?.forEach(btn => btn.addEventListener('click', () => setCompareMode(btn.dataset.mode)));
   document.addEventListener('keydown', handleViewerKeydown);
 }
 
@@ -775,13 +786,16 @@ function escapeHtml(str) {
 
 
 
+
 function renderBeforeAfterOptions() {
   if (!els.beforePhotoSelect || !els.afterPhotoSelect) return;
   state.photos = state.photos || [];
+
   const currentBefore = els.beforePhotoSelect.value;
   const currentAfter = els.afterPhotoSelect.value;
 
-  const options = state.photos.map((photo, index) => {
+  const sorted = getPhotosOldestToNewest();
+  const options = sorted.map((photo) => {
     const label = `${photo.type} • ${formatDateLong(photo.date)}`;
     return `<option value="${photo.id}">${label}</option>`;
   }).join('');
@@ -790,16 +804,51 @@ function renderBeforeAfterOptions() {
   els.afterPhotoSelect.innerHTML = options || '<option value="">No photos yet</option>';
 
   if (state.photos.length >= 2) {
-    els.beforePhotoSelect.value = currentBefore && state.photos.some(p => String(p.id) === currentBefore)
-      ? currentBefore
-      : String(state.photos[state.photos.length - 1].id);
-    els.afterPhotoSelect.value = currentAfter && state.photos.some(p => String(p.id) === currentAfter)
-      ? currentAfter
-      : String(state.photos[0].id);
+    const hasBefore = currentBefore && state.photos.some(p => String(p.id) === String(currentBefore));
+    const hasAfter = currentAfter && state.photos.some(p => String(p.id) === String(currentAfter));
+
+    if (hasBefore && hasAfter) {
+      els.beforePhotoSelect.value = currentBefore;
+      els.afterPhotoSelect.value = currentAfter;
+    } else {
+      autoSelectComparePhotos(false);
+    }
   }
 
   renderBeforeAfterCompare();
 }
+
+function getPhotosOldestToNewest() {
+  return [...(state.photos || [])].sort((a, b) => {
+    const byDate = String(a.date).localeCompare(String(b.date));
+    if (byDate !== 0) return byDate;
+    return Number(a.id || 0) - Number(b.id || 0);
+  });
+}
+
+function autoSelectComparePhotos(showMessage = false) {
+  const sorted = getPhotosOldestToNewest();
+  if (sorted.length < 2) {
+    if (showMessage) showToast('Add at least 2 photos first');
+    return;
+  }
+  const before = sorted[0];
+  const after = sorted[sorted.length - 1];
+  els.beforePhotoSelect.value = String(before.id);
+  els.afterPhotoSelect.value = String(after.id);
+  if (showMessage) {
+    haptic('success');
+    showToast('Oldest and newest photos selected');
+  }
+}
+
+function setCompareMode(mode) {
+  compareMode = mode === 'side' ? 'side' : 'slider';
+  els.compareModeBtns?.forEach(btn => btn.classList.toggle('active', btn.dataset.mode === compareMode));
+  renderBeforeAfterCompare();
+  haptic('light');
+}
+
 
 function renderBeforeAfterCompare() {
   if (!els.compareStage) return;
@@ -809,12 +858,19 @@ function renderBeforeAfterCompare() {
 
   if (!before || !after || state.photos.length < 2) {
     els.compareStage.classList.add('empty-compare');
+    els.compareSideBySide?.classList.add('hidden');
     return;
   }
 
   els.compareStage.classList.remove('empty-compare');
   els.beforeCompareImage.src = before.dataUrl;
   els.afterCompareImage.src = after.dataUrl;
+  if (els.beforeSideImage) els.beforeSideImage.src = before.dataUrl;
+  if (els.afterSideImage) els.afterSideImage.src = after.dataUrl;
+
+  const isSide = compareMode === 'side';
+  els.compareStage.classList.toggle('hidden', isSide);
+  els.compareSideBySide?.classList.toggle('hidden', !isSide);
   updateCompareSlider();
 }
 
@@ -963,7 +1019,7 @@ async function createShareImage() {
     ctx.fillText('Cut Tracker Pro', 64, 96);
     ctx.fillStyle = 'rgba(238,244,255,.68)';
     ctx.font = '500 30px Inter, system-ui, sans-serif';
-    ctx.fillText('Before / After Transformation', 64, 142);
+    ctx.fillText(compareMode === 'side' ? 'Side-by-Side Transformation' : 'Before / After Transformation', 64, 142);
 
     const imgY = 220;
     const imgW = 464;

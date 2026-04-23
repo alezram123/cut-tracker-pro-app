@@ -24,6 +24,16 @@ const initialState = () => {
 let state = loadState();
 let deferredPrompt = null;
 let activePhotoIndex = 0;
+let viewerScale = 1;
+let viewerTranslateX = 0;
+let viewerTranslateY = 0;
+let dragStartX = 0;
+let dragStartY = 0;
+let dragLastX = 0;
+let dragLastY = 0;
+let isDraggingPhoto = false;
+let pinchStartDistance = 0;
+let pinchStartScale = 1;
 
 const els = {
   todayPill: document.getElementById('todayPill'),
@@ -110,6 +120,14 @@ function attachEvents() {
   els.viewerPrev?.addEventListener('click', () => movePhotoViewer(-1));
   els.viewerNext?.addEventListener('click', () => movePhotoViewer(1));
   els.deleteViewerPhoto?.addEventListener('click', deleteActiveViewerPhoto);
+  els.viewerImage?.addEventListener('pointerdown', handleViewerPointerDown);
+  els.viewerImage?.addEventListener('pointermove', handleViewerPointerMove);
+  els.viewerImage?.addEventListener('pointerup', handleViewerPointerUp);
+  els.viewerImage?.addEventListener('pointercancel', handleViewerPointerUp);
+  els.viewerImage?.addEventListener('wheel', handleViewerWheel, { passive: false });
+  els.photoViewer?.addEventListener('touchstart', handleViewerTouchStart, { passive: false });
+  els.photoViewer?.addEventListener('touchmove', handleViewerTouchMove, { passive: false });
+  els.photoViewer?.addEventListener('touchend', handleViewerTouchEnd);
   document.addEventListener('keydown', handleViewerKeydown);
 }
 
@@ -493,6 +511,7 @@ function openPhotoViewer(index) {
   state.photos = state.photos || [];
   if (!state.photos.length) return;
   activePhotoIndex = Math.max(0, Math.min(index, state.photos.length - 1));
+  resetViewerZoom();
   updatePhotoViewer();
   els.photoViewer?.classList.remove('hidden');
   els.photoViewer?.setAttribute('aria-hidden', 'false');
@@ -501,6 +520,7 @@ function openPhotoViewer(index) {
 }
 
 function closePhotoViewer() {
+  resetViewerZoom();
   els.photoViewer?.classList.add('hidden');
   els.photoViewer?.setAttribute('aria-hidden', 'true');
   document.body.classList.remove('viewer-open');
@@ -520,9 +540,135 @@ function updatePhotoViewer() {
 function movePhotoViewer(direction) {
   if (!state.photos?.length) return;
   activePhotoIndex = (activePhotoIndex + direction + state.photos.length) % state.photos.length;
+  resetViewerZoom();
   updatePhotoViewer();
   haptic('light');
 }
+
+
+function resetViewerZoom() {
+  viewerScale = 1;
+  viewerTranslateX = 0;
+  viewerTranslateY = 0;
+  applyViewerTransform();
+}
+
+function applyViewerTransform() {
+  if (!els.viewerImage) return;
+  els.viewerImage.style.transform = `translate(${viewerTranslateX}px, ${viewerTranslateY}px) scale(${viewerScale})`;
+  els.viewerImage.classList.toggle('is-zoomed', viewerScale > 1.02);
+}
+
+function clampViewerPan() {
+  if (viewerScale <= 1) {
+    viewerTranslateX = 0;
+    viewerTranslateY = 0;
+    return;
+  }
+  const maxX = 120 * viewerScale;
+  const maxY = 160 * viewerScale;
+  viewerTranslateX = Math.max(-maxX, Math.min(maxX, viewerTranslateX));
+  viewerTranslateY = Math.max(-maxY, Math.min(maxY, viewerTranslateY));
+}
+
+function handleViewerPointerDown(e) {
+  if (els.photoViewer?.classList.contains('hidden')) return;
+  isDraggingPhoto = true;
+  dragStartX = dragLastX = e.clientX;
+  dragStartY = dragLastY = e.clientY;
+  els.viewerImage?.setPointerCapture?.(e.pointerId);
+}
+
+function handleViewerPointerMove(e) {
+  if (!isDraggingPhoto || els.photoViewer?.classList.contains('hidden')) return;
+  const dx = e.clientX - dragLastX;
+  const dy = e.clientY - dragLastY;
+  dragLastX = e.clientX;
+  dragLastY = e.clientY;
+
+  if (viewerScale > 1.02) {
+    viewerTranslateX += dx;
+    viewerTranslateY += dy;
+    clampViewerPan();
+    applyViewerTransform();
+  }
+}
+
+function handleViewerPointerUp(e) {
+  if (!isDraggingPhoto) return;
+  isDraggingPhoto = false;
+  const totalDx = dragLastX - dragStartX;
+  const totalDy = dragLastY - dragStartY;
+
+  if (viewerScale <= 1.02 && Math.abs(totalDx) > 54 && Math.abs(totalDx) > Math.abs(totalDy) * 1.4) {
+    movePhotoViewer(totalDx < 0 ? 1 : -1);
+  }
+}
+
+function handleViewerWheel(e) {
+  if (els.photoViewer?.classList.contains('hidden')) return;
+  e.preventDefault();
+  const delta = e.deltaY < 0 ? 0.12 : -0.12;
+  viewerScale = Math.max(1, Math.min(4, viewerScale + delta));
+  if (viewerScale === 1) {
+    viewerTranslateX = 0;
+    viewerTranslateY = 0;
+  }
+  clampViewerPan();
+  applyViewerTransform();
+}
+
+function handleViewerTouchStart(e) {
+  if (els.photoViewer?.classList.contains('hidden')) return;
+  if (e.touches.length === 2) {
+    pinchStartDistance = getTouchDistance(e.touches[0], e.touches[1]);
+    pinchStartScale = viewerScale;
+  } else if (e.touches.length === 1) {
+    dragStartX = dragLastX = e.touches[0].clientX;
+    dragStartY = dragLastY = e.touches[0].clientY;
+  }
+}
+
+function handleViewerTouchMove(e) {
+  if (els.photoViewer?.classList.contains('hidden')) return;
+  if (e.touches.length === 2) {
+    e.preventDefault();
+    const currentDistance = getTouchDistance(e.touches[0], e.touches[1]);
+    const nextScale = pinchStartScale * (currentDistance / Math.max(1, pinchStartDistance));
+    viewerScale = Math.max(1, Math.min(4, nextScale));
+    if (viewerScale === 1) {
+      viewerTranslateX = 0;
+      viewerTranslateY = 0;
+    }
+    clampViewerPan();
+    applyViewerTransform();
+  } else if (e.touches.length === 1 && viewerScale > 1.02) {
+    e.preventDefault();
+    const touch = e.touches[0];
+    viewerTranslateX += touch.clientX - dragLastX;
+    viewerTranslateY += touch.clientY - dragLastY;
+    dragLastX = touch.clientX;
+    dragLastY = touch.clientY;
+    clampViewerPan();
+    applyViewerTransform();
+  }
+}
+
+function handleViewerTouchEnd(e) {
+  if (e.touches.length > 0) return;
+  const totalDx = dragLastX - dragStartX;
+  const totalDy = dragLastY - dragStartY;
+  if (viewerScale <= 1.02 && Math.abs(totalDx) > 54 && Math.abs(totalDx) > Math.abs(totalDy) * 1.4) {
+    movePhotoViewer(totalDx < 0 ? 1 : -1);
+  }
+}
+
+function getTouchDistance(a, b) {
+  const dx = a.clientX - b.clientX;
+  const dy = a.clientY - b.clientY;
+  return Math.sqrt(dx * dx + dy * dy);
+}
+
 
 function deleteActiveViewerPhoto() {
   const photo = state.photos?.[activePhotoIndex];

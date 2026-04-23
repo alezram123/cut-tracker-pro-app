@@ -999,3 +999,42 @@ select {
     bottom: calc(58px + env(safe-area-inset-bottom));
   }
 }
+
+
+/* === Swipe + pinch zoom gallery polish === */
+.photo-viewer {
+  touch-action: none;
+}
+.photo-viewer img {
+  transition: transform 0.16s ease;
+  will-change: transform;
+  cursor: zoom-in;
+  user-select: none;
+  -webkit-user-drag: none;
+  touch-action: none;
+}
+.photo-viewer img.is-zoomed {
+  cursor: grab;
+}
+.photo-viewer img.is-zoomed:active {
+  cursor: grabbing;
+}
+.photo-viewer-bottom::after {
+  content: "Swipe photos • Pinch to zoom";
+  display: block;
+  margin-top: 5px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  opacity: 0.62;
+}
+.viewer-nav {
+  transition: opacity .18s ease, transform .18s ease;
+}
+.viewer-nav:active {
+  transform: translateY(-50%) scale(0.94);
+}
+@media (hover: none) {
+  .viewer-nav {
+    opacity: 0.62;
+  }
+}

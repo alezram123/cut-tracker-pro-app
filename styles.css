@@ -757,3 +757,100 @@ input::placeholder, textarea::placeholder { color: rgba(186, 201, 228, 0.42); }
       linear-gradient(180deg, #02060f 0%, #050b16 50%, #02060f 100%);
   }
 }
+
+
+/* === Transformation tracker upgrade === */
+select {
+  width: 100%;
+  border: 1px solid rgba(109, 138, 186, 0.14);
+  border-radius: 16px;
+  background: rgba(3, 8, 17, 0.86);
+  color: var(--text);
+  padding: 13px 15px;
+  font: inherit;
+  outline: none;
+  min-height: 50px;
+}
+.photo-form,
+.weekly-form {
+  display: grid;
+  gap: 14px;
+}
+.measurement-list,
+.weekly-list {
+  display: grid;
+  gap: 12px;
+  margin-top: 16px;
+}
+.measurement-row,
+.weekly-review-card {
+  border-radius: 20px;
+  background: rgba(16, 28, 48, 0.68);
+  border: 1px solid rgba(120,150,200,0.08);
+  padding: 16px;
+}
+.weekly-review-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+}
+.weekly-review-head span {
+  border-radius: 999px;
+  padding: 8px 12px;
+  background: rgba(96, 165, 250, 0.14);
+  color: #bfdbfe;
+  font-weight: 800;
+}
+.weekly-review-card p {
+  color: var(--muted);
+  line-height: 1.45;
+  margin: 10px 0 0;
+}
+.weekly-review-card b {
+  color: #dbe8fb;
+}
+.photo-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 16px;
+}
+.photo-card {
+  position: relative;
+  overflow: hidden;
+  border-radius: 22px;
+  background: rgba(16, 28, 48, 0.68);
+  border: 1px solid rgba(120,150,200,0.08);
+}
+.photo-card img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 3 / 4;
+  object-fit: cover;
+}
+.photo-meta {
+  padding: 12px;
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  align-items: center;
+}
+.photo-meta span {
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+.photo-delete {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  border: 0;
+  border-radius: 999px;
+  padding: 8px 10px;
+  background: rgba(5, 11, 22, 0.72);
+  color: #fca5a5;
+  font-weight: 800;
+}
+@media (max-width: 380px) {
+  .photo-grid { grid-template-columns: 1fr; }
+}

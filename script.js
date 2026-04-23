@@ -14,7 +14,10 @@ const initialState = () => {
     startDate: today,
     goalDate: addDays(today, 84),
     habitsToday: Object.fromEntries(HABITS.map(h => [h.id, false])),
-    checkins: {}
+    checkins: {},
+    measurements: {},
+    photos: [],
+    weeklyReviews: {}
   };
 };
 
@@ -50,6 +53,12 @@ const els = {
   closeInstallBanner: document.getElementById('closeInstallBanner'),
   tabBtns: Array.from(document.querySelectorAll('.tab-btn')),
   tabScreens: Array.from(document.querySelectorAll('.tab-screen')),
+  measurementsForm: document.getElementById('measurementsForm'),
+  measurementList: document.getElementById('measurementList'),
+  photoForm: document.getElementById('photoForm'),
+  photoGrid: document.getElementById('photoGrid'),
+  weeklyForm: document.getElementById('weeklyForm'),
+  weeklyList: document.getElementById('weeklyList'),
 };
 
 init();
@@ -85,6 +94,9 @@ function attachEvents() {
   document.addEventListener('focusin', handleFocusScroll);
   window.addEventListener('resize', drawWeightChart);
   els.tabBtns.forEach(btn => btn.addEventListener('click', () => switchTab(btn.dataset.target)));
+  els.measurementsForm?.addEventListener('submit', handleSaveMeasurements);
+  els.photoForm?.addEventListener('submit', handleSavePhoto);
+  els.weeklyForm?.addEventListener('submit', handleSaveWeeklyReview);
 }
 
 function switchTab(tab, tactile = true) {
@@ -93,7 +105,7 @@ function switchTab(tab, tactile = true) {
   els.tabScreens.forEach(screen => screen.classList.toggle('active', screen.dataset.tab === tab));
   localStorage.setItem(TAB_KEY, tab);
   window.scrollTo({ top: 0, behavior: 'smooth' });
-  if (tab === 'trends') setTimeout(drawWeightChart, 80);
+  if (tab === 'progress') setTimeout(drawWeightChart, 80);
 }
 
 function setupInstallPrompt() {
@@ -150,6 +162,9 @@ function renderAll() {
   renderSnapshot();
   renderGoalCountdown();
   renderCalendar();
+  renderMeasurements();
+  renderPhotos();
+  renderWeeklyReviews();
   drawWeightChart();
 }
 
@@ -366,6 +381,138 @@ function drawWeightChart() {
     ctx.beginPath(); ctx.arc(x, y, 4.5, 0, Math.PI * 2); ctx.fill();
   });
 }
+
+
+function handleSaveMeasurements(e) {
+  e.preventDefault();
+  const today = isoToday();
+  const entry = Object.fromEntries(new FormData(els.measurementsForm).entries());
+  const hasData = Object.values(entry).some(v => String(v || '').trim() !== '');
+  if (!hasData) return showToast('Add at least one measurement');
+  state.measurements = state.measurements || {};
+  state.measurements[today] = { ...(state.measurements[today] || {}), date: today, ...entry };
+  saveState();
+  haptic('success');
+  renderMeasurements();
+  showToast('Measurements saved');
+}
+
+function renderMeasurements() {
+  if (!els.measurementList) return;
+  state.measurements = state.measurements || {};
+  const todayEntry = state.measurements[isoToday()] || {};
+  ['chest', 'arms', 'hips', 'thighs'].forEach(name => {
+    const field = els.measurementsForm?.elements[name];
+    if (field) field.value = todayEntry[name] || '';
+  });
+  const items = Object.values(state.measurements).sort((a, b) => b.date.localeCompare(a.date)).slice(0, 5);
+  els.measurementList.innerHTML = items.length ? '' : '<div class="empty">No measurements saved yet.</div>';
+  items.forEach(item => {
+    const row = document.createElement('div');
+    row.className = 'measurement-row';
+    row.innerHTML = `<div><strong>${formatDateLong(item.date)}</strong><div class="recent-meta">Chest: ${item.chest || '—'} • Arms: ${item.arms || '—'} • Hips: ${item.hips || '—'} • Thighs: ${item.thighs || '—'}</div></div>`;
+    els.measurementList.appendChild(row);
+  });
+}
+
+function handleSavePhoto(e) {
+  e.preventDefault();
+  const file = els.photoForm.elements.photoFile.files?.[0];
+  const type = els.photoForm.elements.photoType.value || 'Other';
+  if (!file) return showToast('Choose a photo first');
+  if (!file.type.startsWith('image/')) return showToast('Please choose an image');
+  const reader = new FileReader();
+  reader.onload = () => {
+    resizeImage(reader.result, 900, 0.82).then((dataUrl) => {
+      state.photos = state.photos || [];
+      state.photos.unshift({ id: Date.now(), date: isoToday(), type, dataUrl });
+      state.photos = state.photos.slice(0, 30);
+      saveState();
+      els.photoForm.reset();
+      haptic('success');
+      renderPhotos();
+      showToast('Progress photo saved');
+    });
+  };
+  reader.readAsDataURL(file);
+}
+
+function resizeImage(dataUrl, maxSize = 900, quality = 0.82) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      const scale = Math.min(1, maxSize / Math.max(img.width, img.height));
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.round(img.width * scale);
+      canvas.height = Math.round(img.height * scale);
+      canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+      resolve(canvas.toDataURL('image/jpeg', quality));
+    };
+    img.onerror = reject;
+    img.src = dataUrl;
+  });
+}
+
+function renderPhotos() {
+  if (!els.photoGrid) return;
+  state.photos = state.photos || [];
+  els.photoGrid.innerHTML = state.photos.length ? '' : '<div class="empty">No progress photos yet.</div>';
+  state.photos.slice(0, 12).forEach(photo => {
+    const card = document.createElement('div');
+    card.className = 'photo-card';
+    card.innerHTML = `<img src="${photo.dataUrl}" alt="${photo.type} progress photo" /><div class="photo-meta"><strong>${photo.type}</strong><span>${formatDateLong(photo.date)}</span></div><button type="button" class="photo-delete">Delete</button>`;
+    card.querySelector('.photo-delete').addEventListener('click', () => {
+      state.photos = state.photos.filter(p => p.id !== photo.id);
+      saveState();
+      renderPhotos();
+      showToast('Photo deleted');
+    });
+    els.photoGrid.appendChild(card);
+  });
+}
+
+function handleSaveWeeklyReview(e) {
+  e.preventDefault();
+  const weekKey = getWeekKey();
+  const entry = Object.fromEntries(new FormData(els.weeklyForm).entries());
+  const hasData = Object.values(entry).some(v => String(v || '').trim() !== '');
+  if (!hasData) return showToast('Add something to your review');
+  state.weeklyReviews = state.weeklyReviews || {};
+  state.weeklyReviews[weekKey] = { weekKey, date: isoToday(), ...entry };
+  saveState();
+  haptic('success');
+  renderWeeklyReviews();
+  showToast('Weekly review saved');
+}
+
+function renderWeeklyReviews() {
+  if (!els.weeklyList) return;
+  state.weeklyReviews = state.weeklyReviews || {};
+  const current = state.weeklyReviews[getWeekKey()] || {};
+  ['rating', 'wins', 'improve', 'focus'].forEach(name => {
+    const field = els.weeklyForm?.elements[name];
+    if (field) field.value = current[name] || '';
+  });
+  const items = Object.values(state.weeklyReviews).sort((a, b) => b.weekKey.localeCompare(a.weekKey)).slice(0, 5);
+  els.weeklyList.innerHTML = items.length ? '' : '<div class="empty">No weekly reviews saved yet.</div>';
+  items.forEach(item => {
+    const card = document.createElement('div');
+    card.className = 'weekly-review-card';
+    card.innerHTML = `<div class="weekly-review-head"><strong>Week of ${formatDateLong(item.weekKey)}</strong><span>${item.rating ? item.rating + '/10' : '—'}</span></div>${item.wins ? `<p><b>Wins:</b> ${escapeHtml(item.wins)}</p>` : ''}${item.improve ? `<p><b>Needs work:</b> ${escapeHtml(item.improve)}</p>` : ''}${item.focus ? `<p><b>Next focus:</b> ${escapeHtml(item.focus)}</p>` : ''}`;
+    els.weeklyList.appendChild(card);
+  });
+}
+
+function getWeekKey() {
+  const dt = localDateStringToDate(isoToday());
+  dt.setDate(dt.getDate() - dt.getDay());
+  return toLocalISO(dt);
+}
+
+function escapeHtml(str) {
+  return String(str).replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[ch]));
+}
+
 
 function exportData() {
   const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });

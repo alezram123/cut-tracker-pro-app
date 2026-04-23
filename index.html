@@ -141,7 +141,7 @@
       </article>
     </section>
 
-    <section class="tab-screen" data-tab="trends">
+    <section class="tab-screen" data-tab="progress">
       <article class="card countdown-card">
         <div class="section-head">
           <h2>Goal Countdown</h2>
@@ -196,6 +196,49 @@
           </div>
         </div>
       </article>
+
+      <article class="card measurements-card">
+        <div class="section-head">
+          <h2>Measurements</h2>
+          <p>Track body changes beyond the scale.</p>
+        </div>
+        <form id="measurementsForm" class="form-grid">
+          <label><span>Chest</span><input type="number" step="0.1" inputmode="decimal" name="chest" placeholder="42.0" /></label>
+          <label><span>Arms</span><input type="number" step="0.1" inputmode="decimal" name="arms" placeholder="15.5" /></label>
+          <label><span>Hips</span><input type="number" step="0.1" inputmode="decimal" name="hips" placeholder="40.0" /></label>
+          <label><span>Thighs</span><input type="number" step="0.1" inputmode="decimal" name="thighs" placeholder="24.0" /></label>
+          <button type="submit" class="btn btn-primary full-span tap-target">Save Measurements</button>
+        </form>
+        <div class="measurement-list" id="measurementList"></div>
+      </article>
+
+      <article class="card photos-card">
+        <div class="section-head">
+          <h2>Progress Photos</h2>
+          <p>Add front, side, or back photos for your transformation.</p>
+        </div>
+        <form id="photoForm" class="photo-form">
+          <label><span>Photo Type</span><select name="photoType"><option>Front</option><option>Side</option><option>Back</option><option>Other</option></select></label>
+          <label><span>Photo</span><input type="file" name="photoFile" accept="image/*" /></label>
+          <button type="submit" class="btn btn-primary tap-target">Save Photo</button>
+        </form>
+        <div class="photo-grid" id="photoGrid"></div>
+      </article>
+
+      <article class="card weekly-card">
+        <div class="section-head">
+          <h2>Weekly Review</h2>
+          <p>A quick check-in for your full week.</p>
+        </div>
+        <form id="weeklyForm" class="weekly-form">
+          <label><span>Week Rating (1–10)</span><input type="number" min="1" max="10" step="1" inputmode="numeric" name="rating" placeholder="8" /></label>
+          <label><span>What went well?</span><textarea name="wins" rows="3" placeholder="Training, food, steps, discipline..."></textarea></label>
+          <label><span>What needs work?</span><textarea name="improve" rows="3" placeholder="Sleep, weekends, hunger, missed workouts..."></textarea></label>
+          <label><span>Next week focus</span><textarea name="focus" rows="3" placeholder="One clear focus for next week."></textarea></label>
+          <button type="submit" class="btn btn-primary tap-target">Save Weekly Review</button>
+        </form>
+        <div class="weekly-list" id="weeklyList"></div>
+      </article>
     </section>
 
     <section class="tab-screen" data-tab="settings">
@@ -223,9 +266,9 @@
         <span class="tab-icon">◫</span>
         <span class="tab-label">History</span>
       </button>
-      <button class="tab-btn" data-target="trends" type="button">
-        <span class="tab-icon">⌁</span>
-        <span class="tab-label">Trends</span>
+      <button class="tab-btn" data-target="progress" type="button">
+        <span class="tab-icon">◉</span>
+        <span class="tab-label">Progress</span>
       </button>
       <button class="tab-btn" data-target="settings" type="button">
         <span class="tab-icon">⚙</span>

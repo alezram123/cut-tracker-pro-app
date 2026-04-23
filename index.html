@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cut Tracker Pro</title>
+  <meta name="theme-color" content="#09111f" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="bg-glow"></div>
+  <main class="app-shell">
+    <header class="hero card">
+      <div class="brand-row">
+        <div class="brand-icon">🔥</div>
+        <div>
+          <h1>Cut Tracker Pro</h1>
+          <p>Built for your 12-week cut.</p>
+        </div>
+      </div>
+      <div class="date-pill" id="todayPill"></div>
+    </header>
+
+    <section class="stats-grid">
+      <article class="card stat-card">
+        <span class="label">Current Streak</span>
+        <strong id="currentStreak">0</strong>
+      </article>
+      <article class="card stat-card">
+        <span class="label">Best Streak</span>
+        <strong id="bestStreak">0</strong>
+      </article>
+      <article class="card stat-card">
+        <span class="label">Today Score</span>
+        <strong><span id="todayScore">0</span>/4</strong>
+      </article>
+    </section>
+
+    <section class="main-grid">
+      <article class="card checkin-card">
+        <div class="section-head">
+          <h2>Daily Check-In</h2>
+          <p>Fast inputs. One place. No guessing.</p>
+        </div>
+        <form id="checkinForm" class="form-grid">
+          <label>
+            <span>Weight</span>
+            <input type="number" step="0.1" name="weight" placeholder="200.0" />
+          </label>
+          <label>
+            <span>Steps</span>
+            <input type="number" step="1" name="steps" placeholder="10000" />
+          </label>
+          <label>
+            <span>Sleep (hours)</span>
+            <input type="number" step="0.1" name="sleep" placeholder="7.5" />
+          </label>
+          <label>
+            <span>Energy (1–10)</span>
+            <input type="number" min="1" max="10" step="1" name="energy" placeholder="7" />
+          </label>
+          <label>
+            <span>Waist (weekly)</span>
+            <input type="number" step="0.1" name="waist" placeholder="36.0" />
+          </label>
+          <label>
+            <span>Body fat % (weekly est.)</span>
+            <input type="number" step="0.1" name="bodyFat" placeholder="20.0" />
+          </label>
+          <label class="full-span">
+            <span>Notes</span>
+            <textarea name="notes" rows="4" placeholder="Energy, hunger, workout notes, anything you want to remember."></textarea>
+          </label>
+          <button type="submit" class="btn btn-primary full-span">Save Day</button>
+          <button type="button" id="resetHabitsBtn" class="btn btn-secondary full-span">Reset Habits</button>
+        </form>
+      </article>
+
+      <article class="card habits-card">
+        <div class="section-head">
+          <h2>Tap-to-Check Habits</h2>
+          <p>Hit at least 3 out of 4 for a successful day.</p>
+        </div>
+        <div class="habit-list" id="habitList"></div>
+        <div class="ring-wrap">
+          <div class="progress-ring">
+            <svg viewBox="0 0 120 120">
+              <circle class="ring-bg" cx="60" cy="60" r="46"></circle>
+              <circle class="ring-progress" id="ringProgress" cx="60" cy="60" r="46"></circle>
+            </svg>
+            <div class="ring-center">
+              <strong id="ringScore">0/4</strong>
+              <span>today</span>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <article class="card chart-card">
+        <div class="section-head">
+          <h2>Progress Chart</h2>
+          <p>Your saved weight trend.</p>
+        </div>
+        <canvas id="weightChart" height="260"></canvas>
+        <div class="chart-empty" id="chartEmpty">Save at least 2 weigh-ins to show your trend.</div>
+      </article>
+
+      <article class="card snapshot-card">
+        <div class="section-head">
+          <h2>Latest Weekly Snapshot</h2>
+          <p>Big-picture numbers.</p>
+        </div>
+        <div class="mini-stats">
+          <div class="mini-card">
+            <span>Latest Weight</span>
+            <strong id="latestWeight">—</strong>
+          </div>
+          <div class="mini-card">
+            <span>Latest Waist</span>
+            <strong id="latestWaist">—</strong>
+          </div>
+          <div class="mini-card">
+            <span>Latest Body Fat</span>
+            <strong id="latestBodyFat">—</strong>
+          </div>
+        </div>
+        <button id="exportBtn" class="btn btn-secondary">Export Data</button>
+        <button id="clearBtn" class="btn btn-danger">Clear All Data</button>
+      </article>
+
+      <article class="card calendar-card">
+        <div class="section-head">
+          <h2>Streak Calendar</h2>
+          <p>See your recent streak days at a glance.</p>
+        </div>
+        <div id="calendar"></div>
+        <div class="legend">
+          <span><i class="dot dot-none"></i>No entry</span>
+          <span><i class="dot dot-success"></i>Success day</span>
+          <span><i class="dot dot-saved"></i>Saved day</span>
+        </div>
+      </article>
+
+      <article class="card countdown-card">
+        <div class="section-head">
+          <h2>Goal Countdown</h2>
+          <p>Track your 12-week finish line.</p>
+        </div>
+        <div class="goal-grid">
+          <div class="mini-card">
+            <span>Start Date</span>
+            <strong id="startDateCard">—</strong>
+          </div>
+          <div class="mini-card">
+            <span>Goal Date</span>
+            <strong id="goalDateCard">—</strong>
+          </div>
+        </div>
+        <div class="progress-box">
+          <div class="progress-head">
+            <span>Progress to Goal</span>
+            <strong id="goalPercent">0%</strong>
+          </div>
+          <div class="progress-bar"><div id="goalBar"></div></div>
+          <p id="goalMessage">You are 0% of the way through your 12-week cut.</p>
+        </div>
+      </article>
+
+      <article class="card recent-card full-width">
+        <div class="section-head">
+          <h2>Recent Check-Ins</h2>
+          <p>Your last saved days.</p>
+        </div>
+        <div id="recentList" class="recent-list"></div>
+      </article>
+    </section>
+
+    <footer class="footer-note">
+      Everything saves locally on your device. Add it to your Home Screen for the full app feel.
+    </footer>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>

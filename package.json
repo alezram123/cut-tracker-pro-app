@@ -1,0 +1,9 @@
+{
+  "name": "cut-tracker-pro-no-supabase",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "npx serve .",
+    "start": "npx serve ."
+  }
+}

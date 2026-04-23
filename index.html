@@ -251,6 +251,7 @@
           </div>
           <input id="compareSlider" class="compare-slider" type="range" min="0" max="100" value="50" />
         </div>
+        <button id="shareCompareBtn" type="button" class="btn btn-primary tap-target full-width-btn">Create Share Image</button>
       </article>
 
       <article class="card weekly-summary-card">
@@ -298,7 +299,12 @@
           <p>Manage your app and your data.</p>
         </div>
         <div class="settings-stack">
-          <button id="exportBtn" class="btn btn-secondary tap-target">Export Data</button>
+          <button id="exportBtn" class="btn btn-secondary tap-target">Export Backup</button>
+          <label class="import-card">
+            <span>Import Backup</span>
+            <input id="importInput" type="file" accept="application/json,.json" />
+          </label>
+          <button id="backupReminderBtn" class="btn btn-secondary tap-target">Remind Me to Backup Weekly</button>
           <button id="clearBtn" class="btn btn-danger tap-target">Clear All Data</button>
         </div>
         <div class="settings-note">
@@ -342,6 +348,24 @@
     <img id="viewerImage" alt="Progress photo preview" />
     <button type="button" class="viewer-nav viewer-next" id="viewerNext" aria-label="Next photo">›</button>
     <div class="photo-viewer-bottom" id="photoViewerMeta"></div>
+  </div>
+
+
+  <div class="share-sheet hidden" id="shareSheet" aria-hidden="true">
+    <div class="share-card">
+      <div class="share-head">
+        <div>
+          <strong>Share Image</strong>
+          <p>Save or share your before/after transformation.</p>
+        </div>
+        <button type="button" class="banner-close" id="closeShareSheet" aria-label="Close">✕</button>
+      </div>
+      <img id="sharePreview" alt="Generated before and after image" />
+      <div class="share-actions">
+        <button type="button" class="btn btn-primary tap-target" id="downloadShareBtn">Download Image</button>
+        <button type="button" class="btn btn-secondary tap-target" id="nativeShareBtn">Share</button>
+      </div>
+    </div>
   </div>
 
   <div class="toast" id="toast"></div>

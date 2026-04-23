@@ -34,6 +34,8 @@ let dragLastY = 0;
 let isDraggingPhoto = false;
 let pinchStartDistance = 0;
 let pinchStartScale = 1;
+let generatedShareBlob = null;
+let generatedShareUrl = '';
 
 const els = {
   todayPill: document.getElementById('todayPill'),
@@ -90,6 +92,14 @@ const els = {
   summaryStreak: document.getElementById('summaryStreak'),
   summaryHabits: document.getElementById('summaryHabits'),
   summaryNote: document.getElementById('summaryNote'),
+  importInput: document.getElementById('importInput'),
+  backupReminderBtn: document.getElementById('backupReminderBtn'),
+  shareCompareBtn: document.getElementById('shareCompareBtn'),
+  shareSheet: document.getElementById('shareSheet'),
+  closeShareSheet: document.getElementById('closeShareSheet'),
+  sharePreview: document.getElementById('sharePreview'),
+  downloadShareBtn: document.getElementById('downloadShareBtn'),
+  nativeShareBtn: document.getElementById('nativeShareBtn'),
 };
 
 init();
@@ -101,6 +111,7 @@ function init() {
   setupInstallPrompt();
   switchTab(localStorage.getItem(TAB_KEY) || 'dashboard', false);
   renderAll();
+  maybeShowBackupReminder();
 }
 
 function attachEvents() {
@@ -143,6 +154,12 @@ function attachEvents() {
   els.beforePhotoSelect?.addEventListener('change', renderBeforeAfterCompare);
   els.afterPhotoSelect?.addEventListener('change', renderBeforeAfterCompare);
   els.compareSlider?.addEventListener('input', updateCompareSlider);
+  els.importInput?.addEventListener('change', handleImportBackup);
+  els.backupReminderBtn?.addEventListener('click', handleBackupReminder);
+  els.shareCompareBtn?.addEventListener('click', createShareImage);
+  els.closeShareSheet?.addEventListener('click', closeShareSheet);
+  els.downloadShareBtn?.addEventListener('click', downloadShareImage);
+  els.nativeShareBtn?.addEventListener('click', nativeShareImage);
   document.addEventListener('keydown', handleViewerKeydown);
 }
 
@@ -854,14 +871,228 @@ function renderWeeklyAutoSummary() {
 }
 
 
+
 function exportData() {
-  const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
+  const backup = {
+    app: 'Cut Tracker Pro',
+    version: 2,
+    exportedAt: new Date().toISOString(),
+    data: state
+  };
+  const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
-  a.href = url; a.download = `cut-tracker-pro-${isoToday()}.json`; a.click();
+  a.href = url;
+  a.download = `cut-tracker-pro-backup-${isoToday()}.json`;
+  a.click();
   URL.revokeObjectURL(url);
   haptic('light');
-  showToast('Data exported');
+  showToast('Backup exported');
+}
+
+function handleImportBackup(e) {
+  const file = e.target.files?.[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      const parsed = JSON.parse(reader.result);
+      const imported = parsed.data || parsed;
+      if (!imported || typeof imported !== 'object' || !imported.checkins) {
+        showToast('Not a valid backup file');
+        return;
+      }
+      if (!confirm('Import this backup and replace current app data?')) return;
+      state = {
+        ...initialState(),
+        ...imported,
+        habitsToday: imported.habitsToday || initialState().habitsToday,
+        checkins: imported.checkins || {},
+        measurements: imported.measurements || {},
+        photos: imported.photos || [],
+        weeklyReviews: imported.weeklyReviews || {}
+      };
+      saveState();
+      renderAll();
+      haptic('success');
+      showToast('Backup imported');
+    } catch {
+      showToast('Could not read backup');
+    } finally {
+      e.target.value = '';
+    }
+  };
+  reader.readAsText(file);
+}
+
+function handleBackupReminder() {
+  const today = isoToday();
+  localStorage.setItem('cut-tracker-pro-last-backup-reminder', today);
+  showToast('Backup reminder noted — export weekly');
+  haptic('light');
+}
+
+function getSelectedComparePhotos() {
+  const before = state.photos?.find(p => String(p.id) === String(els.beforePhotoSelect?.value));
+  const after = state.photos?.find(p => String(p.id) === String(els.afterPhotoSelect?.value));
+  return { before, after };
+}
+
+async function createShareImage() {
+  const { before, after } = getSelectedComparePhotos();
+  if (!before || !after) {
+    showToast('Pick two photos first');
+    return;
+  }
+  showToast('Creating share image...');
+  try {
+    const [beforeImg, afterImg] = await Promise.all([loadImage(before.dataUrl), loadImage(after.dataUrl)]);
+    const canvas = document.createElement('canvas');
+    canvas.width = 1080;
+    canvas.height = 1350;
+    const ctx = canvas.getContext('2d');
+
+    const grad = ctx.createLinearGradient(0, 0, 0, canvas.height);
+    grad.addColorStop(0, '#061123');
+    grad.addColorStop(1, '#02060f');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    ctx.fillStyle = '#eef4ff';
+    ctx.font = '800 64px Inter, system-ui, sans-serif';
+    ctx.fillText('Cut Tracker Pro', 64, 96);
+    ctx.fillStyle = 'rgba(238,244,255,.68)';
+    ctx.font = '500 30px Inter, system-ui, sans-serif';
+    ctx.fillText('Before / After Transformation', 64, 142);
+
+    const imgY = 220;
+    const imgW = 464;
+    const imgH = 760;
+    drawCoverImage(ctx, beforeImg, 64, imgY, imgW, imgH, 36);
+    drawCoverImage(ctx, afterImg, 552, imgY, imgW, imgH, 36);
+
+    drawImageLabel(ctx, 'BEFORE', 88, imgY + 42);
+    drawImageLabel(ctx, 'AFTER', 576, imgY + 42);
+
+    ctx.fillStyle = '#eef4ff';
+    ctx.font = '800 38px Inter, system-ui, sans-serif';
+    ctx.fillText(formatDateLong(before.date), 64, 1048);
+    ctx.fillText(formatDateLong(after.date), 552, 1048);
+
+    const summary = buildShareSummary();
+    ctx.fillStyle = 'rgba(16, 28, 48, .82)';
+    roundRect(ctx, 64, 1100, 952, 150, 32);
+    ctx.fill();
+
+    ctx.fillStyle = '#bfdbfe';
+    ctx.font = '800 30px Inter, system-ui, sans-serif';
+    ctx.fillText(summary.title, 104, 1152);
+    ctx.fillStyle = 'rgba(238,244,255,.78)';
+    ctx.font = '500 28px Inter, system-ui, sans-serif';
+    ctx.fillText(summary.subtitle, 104, 1198);
+
+    ctx.fillStyle = 'rgba(238,244,255,.52)';
+    ctx.font = '500 24px Inter, system-ui, sans-serif';
+    ctx.fillText('Generated with Cut Tracker Pro', 64, 1292);
+
+    generatedShareBlob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png', 0.95));
+    if (generatedShareUrl) URL.revokeObjectURL(generatedShareUrl);
+    generatedShareUrl = URL.createObjectURL(generatedShareBlob);
+    els.sharePreview.src = generatedShareUrl;
+    els.shareSheet.classList.remove('hidden');
+    els.shareSheet.setAttribute('aria-hidden', 'false');
+    haptic('success');
+  } catch {
+    showToast('Could not create image');
+  }
+}
+
+function buildShareSummary() {
+  const entries = getSortedCheckins().filter(e => e.weight !== '' && !isNaN(Number(e.weight)));
+  if (entries.length >= 2) {
+    const change = Number(entries[entries.length - 1].weight) - Number(entries[0].weight);
+    return {
+      title: `${change > 0 ? '+' : ''}${change.toFixed(1)} lb total change`,
+      subtitle: `${entries.length} weigh-ins tracked`
+    };
+  }
+  return {
+    title: 'Transformation in progress',
+    subtitle: 'Consistency, photos, and weekly reviews'
+  };
+}
+
+function closeShareSheet() {
+  els.shareSheet?.classList.add('hidden');
+  els.shareSheet?.setAttribute('aria-hidden', 'true');
+}
+
+function downloadShareImage() {
+  if (!generatedShareUrl) return showToast('Create image first');
+  const a = document.createElement('a');
+  a.href = generatedShareUrl;
+  a.download = `cut-tracker-before-after-${isoToday()}.png`;
+  a.click();
+  showToast('Share image downloaded');
+}
+
+async function nativeShareImage() {
+  if (!generatedShareBlob) return showToast('Create image first');
+  const file = new File([generatedShareBlob], `cut-tracker-before-after-${isoToday()}.png`, { type: 'image/png' });
+  if (navigator.canShare && navigator.canShare({ files: [file] })) {
+    await navigator.share({ files: [file], title: 'Cut Tracker Pro', text: 'My before/after progress' });
+  } else {
+    downloadShareImage();
+  }
+}
+
+function loadImage(src) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = reject;
+    img.src = src;
+  });
+}
+
+function drawCoverImage(ctx, img, x, y, w, h, r) {
+  ctx.save();
+  roundRect(ctx, x, y, w, h, r);
+  ctx.clip();
+  const scale = Math.max(w / img.width, h / img.height);
+  const iw = img.width * scale;
+  const ih = img.height * scale;
+  ctx.drawImage(img, x + (w - iw) / 2, y + (h - ih) / 2, iw, ih);
+  ctx.restore();
+}
+
+function drawImageLabel(ctx, text, x, y) {
+  ctx.fillStyle = 'rgba(2, 6, 15, .72)';
+  roundRect(ctx, x - 14, y - 34, 140, 48, 18);
+  ctx.fill();
+  ctx.fillStyle = '#eef4ff';
+  ctx.font = '800 24px Inter, system-ui, sans-serif';
+  ctx.fillText(text, x, y);
+}
+
+function roundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+}
+
+
+
+function maybeShowBackupReminder() {
+  const last = localStorage.getItem('cut-tracker-pro-last-backup-reminder');
+  if (!last) return;
+  if (daysBetween(last, isoToday()) >= 7) {
+    setTimeout(() => showToast('Reminder: export a backup this week'), 900);
+  }
 }
 
 function registerServiceWorker() { if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {}); }

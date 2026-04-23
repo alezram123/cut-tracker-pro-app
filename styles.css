@@ -1183,3 +1183,76 @@ select {
     font-size: 1.55rem;
   }
 }
+
+
+/* === Backup import + share image generator === */
+.import-card {
+  display: block;
+  border-radius: 20px;
+  background: rgba(16, 28, 48, 0.68);
+  border: 1px dashed rgba(96, 165, 250, 0.28);
+  padding: 16px;
+}
+.import-card span {
+  margin: 0 0 10px;
+  color: #dbeafe;
+}
+.import-card input {
+  background: transparent;
+  border: 0;
+  padding: 0;
+}
+.full-width-btn {
+  width: 100%;
+  margin-top: 14px;
+}
+.share-sheet {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  background: rgba(1, 4, 10, 0.82);
+  backdrop-filter: blur(16px);
+}
+.share-sheet.hidden {
+  display: none;
+}
+.share-card {
+  width: min(420px, 100%);
+  max-height: 92dvh;
+  overflow: auto;
+  border-radius: 30px;
+  padding: 16px;
+  background: linear-gradient(180deg, rgba(14, 25, 44, 0.98), rgba(5, 12, 24, 0.98));
+  border: 1px solid rgba(120, 150, 200, 0.14);
+  box-shadow: 0 24px 80px rgba(0,0,0,.55);
+}
+.share-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: flex-start;
+  margin-bottom: 14px;
+}
+.share-head strong {
+  font-size: 1.2rem;
+}
+.share-head p {
+  margin: 4px 0 0;
+  color: var(--muted);
+}
+.share-card img {
+  width: 100%;
+  display: block;
+  border-radius: 22px;
+  border: 1px solid rgba(120,150,200,0.1);
+  background: #02060f;
+}
+.share-actions {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+  margin-top: 14px;
+}

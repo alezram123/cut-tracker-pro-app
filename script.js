@@ -23,6 +23,7 @@ const initialState = () => {
 
 let state = loadState();
 let deferredPrompt = null;
+let activePhotoIndex = 0;
 
 const els = {
   todayPill: document.getElementById('todayPill'),
@@ -59,6 +60,14 @@ const els = {
   photoGrid: document.getElementById('photoGrid'),
   weeklyForm: document.getElementById('weeklyForm'),
   weeklyList: document.getElementById('weeklyList'),
+  photoViewer: document.getElementById('photoViewer'),
+  viewerImage: document.getElementById('viewerImage'),
+  photoViewerTitle: document.getElementById('photoViewerTitle'),
+  photoViewerMeta: document.getElementById('photoViewerMeta'),
+  closePhotoViewer: document.getElementById('closePhotoViewer'),
+  deleteViewerPhoto: document.getElementById('deleteViewerPhoto'),
+  viewerPrev: document.getElementById('viewerPrev'),
+  viewerNext: document.getElementById('viewerNext'),
 };
 
 init();
@@ -97,6 +106,11 @@ function attachEvents() {
   els.measurementsForm?.addEventListener('submit', handleSaveMeasurements);
   els.photoForm?.addEventListener('submit', handleSavePhoto);
   els.weeklyForm?.addEventListener('submit', handleSaveWeeklyReview);
+  els.closePhotoViewer?.addEventListener('click', closePhotoViewer);
+  els.viewerPrev?.addEventListener('click', () => movePhotoViewer(-1));
+  els.viewerNext?.addEventListener('click', () => movePhotoViewer(1));
+  els.deleteViewerPhoto?.addEventListener('click', deleteActiveViewerPhoto);
+  document.addEventListener('keydown', handleViewerKeydown);
 }
 
 function switchTab(tab, tactile = true) {
@@ -453,22 +467,84 @@ function resizeImage(dataUrl, maxSize = 900, quality = 0.82) {
   });
 }
 
+
 function renderPhotos() {
   if (!els.photoGrid) return;
   state.photos = state.photos || [];
   els.photoGrid.innerHTML = state.photos.length ? '' : '<div class="empty">No progress photos yet.</div>';
-  state.photos.slice(0, 12).forEach(photo => {
-    const card = document.createElement('div');
-    card.className = 'photo-card';
-    card.innerHTML = `<img src="${photo.dataUrl}" alt="${photo.type} progress photo" /><div class="photo-meta"><strong>${photo.type}</strong><span>${formatDateLong(photo.date)}</span></div><button type="button" class="photo-delete">Delete</button>`;
-    card.querySelector('.photo-delete').addEventListener('click', () => {
-      state.photos = state.photos.filter(p => p.id !== photo.id);
-      saveState();
-      renderPhotos();
-      showToast('Photo deleted');
-    });
+  state.photos.slice(0, 24).forEach((photo, index) => {
+    const card = document.createElement('button');
+    card.type = 'button';
+    card.className = 'photo-card gallery-card tap-target';
+    card.innerHTML = `
+      <img src="${photo.dataUrl}" alt="${photo.type} progress photo" loading="lazy" />
+      <div class="photo-gradient"></div>
+      <div class="photo-meta">
+        <strong>${photo.type}</strong>
+        <span>${formatDateLong(photo.date)}</span>
+      </div>
+    `;
+    card.addEventListener('click', () => openPhotoViewer(index));
     els.photoGrid.appendChild(card);
   });
+}
+
+function openPhotoViewer(index) {
+  state.photos = state.photos || [];
+  if (!state.photos.length) return;
+  activePhotoIndex = Math.max(0, Math.min(index, state.photos.length - 1));
+  updatePhotoViewer();
+  els.photoViewer?.classList.remove('hidden');
+  els.photoViewer?.setAttribute('aria-hidden', 'false');
+  document.body.classList.add('viewer-open');
+  haptic('light');
+}
+
+function closePhotoViewer() {
+  els.photoViewer?.classList.add('hidden');
+  els.photoViewer?.setAttribute('aria-hidden', 'true');
+  document.body.classList.remove('viewer-open');
+}
+
+function updatePhotoViewer() {
+  const photo = state.photos?.[activePhotoIndex];
+  if (!photo || !els.viewerImage) return;
+  els.viewerImage.src = photo.dataUrl;
+  els.viewerImage.alt = `${photo.type} progress photo from ${photo.date}`;
+  els.photoViewerTitle.textContent = `${photo.type} Photo`;
+  els.photoViewerMeta.textContent = `${formatDateLong(photo.date)} • ${activePhotoIndex + 1} of ${state.photos.length}`;
+  els.viewerPrev.disabled = state.photos.length <= 1;
+  els.viewerNext.disabled = state.photos.length <= 1;
+}
+
+function movePhotoViewer(direction) {
+  if (!state.photos?.length) return;
+  activePhotoIndex = (activePhotoIndex + direction + state.photos.length) % state.photos.length;
+  updatePhotoViewer();
+  haptic('light');
+}
+
+function deleteActiveViewerPhoto() {
+  const photo = state.photos?.[activePhotoIndex];
+  if (!photo) return;
+  if (!confirm('Delete this progress photo?')) return;
+  state.photos = state.photos.filter(p => p.id !== photo.id);
+  saveState();
+  renderPhotos();
+  if (!state.photos.length) {
+    closePhotoViewer();
+  } else {
+    activePhotoIndex = Math.min(activePhotoIndex, state.photos.length - 1);
+    updatePhotoViewer();
+  }
+  showToast('Photo deleted');
+}
+
+function handleViewerKeydown(e) {
+  if (els.photoViewer?.classList.contains('hidden')) return;
+  if (e.key === 'Escape') closePhotoViewer();
+  if (e.key === 'ArrowLeft') movePhotoViewer(-1);
+  if (e.key === 'ArrowRight') movePhotoViewer(1);
 }
 
 function handleSaveWeeklyReview(e) {

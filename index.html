@@ -215,7 +215,7 @@
       <article class="card photos-card">
         <div class="section-head">
           <h2>Progress Photos</h2>
-          <p>Add front, side, or back photos for your transformation.</p>
+          <p>Add photos and tap any photo to view it full screen.</p>
         </div>
         <form id="photoForm" class="photo-form">
           <label><span>Photo Type</span><select name="photoType"><option>Front</option><option>Side</option><option>Back</option><option>Other</option></select></label>
@@ -280,6 +280,19 @@
       Everything saves locally on your device. Add it to your Home Screen for the full app feel.
     </footer>
   </main>
+
+
+  <div class="photo-viewer hidden" id="photoViewer" aria-hidden="true">
+    <div class="photo-viewer-top">
+      <button type="button" class="viewer-btn" id="closePhotoViewer">Done</button>
+      <div class="viewer-title" id="photoViewerTitle">Progress Photo</div>
+      <button type="button" class="viewer-btn danger" id="deleteViewerPhoto">Delete</button>
+    </div>
+    <button type="button" class="viewer-nav viewer-prev" id="viewerPrev" aria-label="Previous photo">‹</button>
+    <img id="viewerImage" alt="Progress photo preview" />
+    <button type="button" class="viewer-nav viewer-next" id="viewerNext" aria-label="Next photo">›</button>
+    <div class="photo-viewer-bottom" id="photoViewerMeta"></div>
+  </div>
 
   <div class="toast" id="toast"></div>
   <script src="script.js"></script>

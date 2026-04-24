@@ -96,7 +96,7 @@
               <span>Notes</span>
               <textarea name="notes" rows="4" placeholder="Energy, hunger, workout notes, anything you want to remember."></textarea>
             </label>
-            <button type="submit" class="btn btn-primary full-span tap-target">Save Day</button>
+            <button type="submit" class="btn btn-primary full-span tap-target">Save Day</button><button onclick='lockToday()' class='btn btn-secondary'>Lock Today</button>
             <button type="button" id="resetHabitsBtn" class="btn btn-secondary full-span tap-target">Reset Habits</button>
           </form>
         </article>
@@ -271,7 +271,7 @@
 
       <article class="card weekly-summary-card">
         <div class="section-head">
-          <h2>Weekly Auto-Summary</h2>
+          <h2>Weekly Auto-Summary<div id='insightsText' style='margin-top:10px;color:#9fb3c8'></div></h2>
           <p>Your week at a glance.</p>
         </div>
         <div class="summary-grid">

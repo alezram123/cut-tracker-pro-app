@@ -17,8 +17,7 @@ const initialState = () => {
     checkins: {},
     measurements: {},
     photos: [],
-    weeklyReviews: {},
-    lockedDays: {}
+    weeklyReviews: {}
   };
 };
 
@@ -1178,47 +1177,4 @@ function isIosSafari() {
 function handleFocusScroll(e) {
   const tag = e.target?.tagName;
   if (tag === 'INPUT' || tag === 'TEXTAREA') setTimeout(() => e.target.scrollIntoView({ block: 'center', behavior: 'smooth' }), 250);
-}
-
-
-// === Today Lock ===
-function lockToday() {
-  const today = isoToday();
-  state.lockedDays = state.lockedDays || {};
-  state.lockedDays[today] = true;
-  saveState();
-  showToast('Today locked');
-}
-
-function isTodayLocked() {
-  return state.lockedDays?.[isoToday()];
-}
-
-// === Smart Insights ===
-function getInsights() {
-  const entries = getSortedCheckins();
-  if (!entries.length) return 'Start tracking to unlock insights';
-  const last7 = entries.slice(-7);
-  const success = last7.filter(e => e.success).length;
-  return `You completed ${success}/7 successful days this week`;
-}
-
-// === Simple Chart Upgrade (weight trend) ===
-function drawSimpleTrend() {
-  const canvas = document.getElementById('progressChart');
-  if (!canvas) return;
-  const ctx = canvas.getContext('2d');
-  const data = getSortedCheckins().map(e => Number(e.weight)).filter(n => !isNaN(n));
-  if (data.length < 2) return;
-
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-  ctx.beginPath();
-  data.forEach((v,i)=>{
-    const x = (i/(data.length-1))*canvas.width;
-    const y = canvas.height - (v/Math.max(...data))*canvas.height;
-    if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
-  });
-  ctx.strokeStyle = '#60a5fa';
-  ctx.lineWidth = 2;
-  ctx.stroke();
 }

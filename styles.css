@@ -1327,3 +1327,35 @@ select {
     min-height: 300px;
   }
 }
+
+
+/* === iPhone bottom nav centering fix === */
+/* The bottom nav is also a .card, and the card animation can overwrite transform.
+   This locks the nav to the center of the phone screen. */
+.bottom-nav {
+  left: 50% !important;
+  right: auto !important;
+  transform: translateX(-50%) !important;
+  width: min(402px, calc(100vw - 20px)) !important;
+  max-width: calc(100vw - 20px) !important;
+  animation: none !important;
+}
+
+.bottom-nav.card {
+  transform: translateX(-50%) !important;
+}
+
+.bottom-nav .tab-btn {
+  min-width: 0;
+}
+
+body {
+  overflow-x: hidden;
+}
+
+.app-shell-tabs {
+  max-width: 430px;
+  width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+}
